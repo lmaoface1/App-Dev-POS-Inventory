@@ -21,7 +21,5 @@ build/
 Thumbs.db
 EOF
 
-# Environment variables — NEVER commit real .env
+node_modules/
 .env
-.env.local
-.env.*.local
