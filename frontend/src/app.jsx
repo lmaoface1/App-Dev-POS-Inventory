@@ -1,23 +1,70 @@
-import React from 'react';
-import Sidebar from './components/sidebar';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Pages
+import Login from './pages/login';
 import Dashboard from './pages/dashboard';
+import Inventory from './pages/inventory';
+import POS from './pages/pos';
+import Orders from './pages/orders';
+import UserManagement from './pages/users';
+import SalesAnalytics from './pages/sales';
+import Reports from './pages/reports';
 
 export default function App() {
   return (
-    <div className="flex flex-row h-screen w-screen bg-[#fafafa] antialiased overflow-hidden m-0 p-0">
-      {/* We wrap the Sidebar in a container that forces it 
-        to stay exactly 16rem (w-64) wide and never squish to 0
-      */}
-      <div className="w-64 min-w-[16rem] h-full flex-shrink-0 z-10">
-        <Sidebar />
-      </div>
-      
-      {/* The Dashboard is forced to take up exactly the remaining space 
-        available on the screen (flex-1) and handle its own vertical scroll
-      */}
-      <div className="flex-1 h-full min-w-0 overflow-y-auto">
-        <Dashboard />
-      </div>
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Admin-only routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute role="admin">
+              <Layout><Dashboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/inventory" element={
+            <ProtectedRoute role="admin">
+              <Layout><Inventory /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/sales" element={
+            <ProtectedRoute role="admin">
+              <Layout><SalesAnalytics /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <ProtectedRoute role="admin">
+              <Layout><Orders /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/users" element={
+            <ProtectedRoute role="admin">
+              <Layout><UserManagement /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute role="admin">
+              <Layout><Reports /></Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Cashier-accessible routes */}
+          <Route path="/pos" element={
+            <ProtectedRoute>
+              <Layout><POS /></Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

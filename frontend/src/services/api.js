@@ -4,13 +4,24 @@ const API = axios.create({
   baseURL: 'http://localhost:5000/api',
 });
 
-// Auto-inject JWT token into headers for backend auth verification
+// Attach JWT token to every request
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// Handle 401 globally — force logout
+API.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
 
 export default API;
