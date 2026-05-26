@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Users, ShieldCheck, User } from 'lucide-react';
-import { userService } from '../services/userService';
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Users, ShieldCheck, User } from "lucide-react";
+import { userService } from "../services/userService";
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'cashier' };
+const EMPTY_FORM = { name: "", email: "", password: "", role: "cashier" };
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -10,12 +10,12 @@ export default function UserManagement() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const fetchUsers = async () => {
     try {
-      const res = await userService.getAll();
-      setUsers(res.data || []);
+      const data = await userService.getAll();
+      setUsers(data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -23,29 +23,32 @@ export default function UserManagement() {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleCreate = async () => {
-    setSaving(true); setError('');
+    setSaving(true);
+    setError("");
     try {
       await userService.create(form);
       await fetchUsers();
       setModal(false);
       setForm(EMPTY_FORM);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create user');
+      setError(err.response?.data?.message || "Failed to create user");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this user account?')) return;
+    if (!window.confirm("Delete this user account?")) return;
     try {
       await userService.delete(id);
       await fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete user');
+      alert(err.response?.data?.message || "Failed to delete user");
     }
   };
 
@@ -54,10 +57,16 @@ export default function UserManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage cashier and admin accounts</p>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Manage cashier and admin accounts
+          </p>
         </div>
         <button
-          onClick={() => { setForm(EMPTY_FORM); setError(''); setModal(true); }}
+          onClick={() => {
+            setForm(EMPTY_FORM);
+            setError("");
+            setModal(true);
+          }}
           className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition"
         >
           <Plus size={16} />
@@ -73,7 +82,9 @@ export default function UserManagement() {
           </div>
           <div>
             <p className="text-xs text-gray-400">Admins</p>
-            <p className="font-bold text-gray-900">{users.filter((u) => u.role === 'admin').length}</p>
+            <p className="font-bold text-gray-900">
+              {users.filter((u) => u.role === "admin").length}
+            </p>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
@@ -82,7 +93,9 @@ export default function UserManagement() {
           </div>
           <div>
             <p className="text-xs text-gray-400">Cashiers</p>
-            <p className="font-bold text-gray-900">{users.filter((u) => u.role === 'cashier').length}</p>
+            <p className="font-bold text-gray-900">
+              {users.filter((u) => u.role === "cashier").length}
+            </p>
           </div>
         </div>
       </div>
@@ -91,14 +104,24 @@ export default function UserManagement() {
       <div className="bg-white rounded-xl border border-gray-100 p-5">
         {loading ? (
           <div className="space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />)}
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-14 bg-gray-100 rounded-lg animate-pulse"
+              />
+            ))}
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Name', 'Email', 'Role', 'Created', 'Actions'].map((h) => (
-                  <th key={h} className="text-left text-gray-400 font-medium pb-3 pr-4">{h}</th>
+                {["Name", "Email", "Role", "Created", "Actions"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left text-gray-400 font-medium pb-3 pr-4"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -110,14 +133,20 @@ export default function UserManagement() {
                       <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-semibold text-xs">
                         {u.name?.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-medium text-gray-800">{u.name}</span>
+                      <span className="font-medium text-gray-800">
+                        {u.name}
+                      </span>
                     </div>
                   </td>
                   <td className="py-3.5 pr-4 text-gray-500">{u.email}</td>
                   <td className="py-3.5 pr-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                      u.role === 'admin' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
-                    }`}>
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        u.role === "admin"
+                          ? "bg-blue-50 text-blue-600"
+                          : "bg-orange-50 text-orange-600"
+                      }`}
+                    >
                       {u.role}
                     </span>
                   </td>
@@ -125,7 +154,10 @@ export default function UserManagement() {
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3.5">
-                    <button onClick={() => handleDelete(u.id)} className="text-gray-400 hover:text-red-500 transition">
+                    <button
+                      onClick={() => handleDelete(u.id)}
+                      className="text-gray-400 hover:text-red-500 transition"
+                    >
                       <Trash2 size={15} />
                     </button>
                   </td>
@@ -148,27 +180,54 @@ export default function UserManagement() {
       {modal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h2 className="font-bold text-gray-900 text-lg mb-5">Create New User</h2>
-            {error && <p className="text-sm text-red-500 mb-4 bg-red-50 p-3 rounded-lg">{error}</p>}
+            <h2 className="font-bold text-gray-900 text-lg mb-5">
+              Create New User
+            </h2>
+            {error && (
+              <p className="text-sm text-red-500 mb-4 bg-red-50 p-3 rounded-lg">
+                {error}
+              </p>
+            )}
             <div className="space-y-4">
               {[
-                { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Juan dela Cruz' },
-                { label: 'Email', key: 'email', type: 'email', placeholder: 'juan@example.com' },
-                { label: 'Password', key: 'password', type: 'password', placeholder: 'Min 8 characters' },
+                {
+                  label: "Full Name",
+                  key: "name",
+                  type: "text",
+                  placeholder: "Juan dela Cruz",
+                },
+                {
+                  label: "Email",
+                  key: "email",
+                  type: "email",
+                  placeholder: "juan@example.com",
+                },
+                {
+                  label: "Password",
+                  key: "password",
+                  type: "password",
+                  placeholder: "Min 8 characters",
+                },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    {label}
+                  </label>
                   <input
                     type={type}
                     value={form[key]}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, [key]: e.target.value })
+                    }
                     placeholder={placeholder}
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
                   />
                 </div>
               ))}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Role
+                </label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
@@ -180,9 +239,18 @@ export default function UserManagement() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setModal(false)} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-              <button onClick={handleCreate} disabled={saving} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg transition">
-                {saving ? 'Creating...' : 'Create User'}
+              <button
+                onClick={() => setModal(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={saving}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg transition"
+              >
+                {saving ? "Creating..." : "Create User"}
               </button>
             </div>
           </div>

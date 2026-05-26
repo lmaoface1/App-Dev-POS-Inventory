@@ -1,14 +1,14 @@
-import API from './api';
+import API from "./api";
 
 export const userService = {
   getAll: async () => {
-    const res = await API.get('/users');
+    const res = await API.get("/auth/users");
     return res.data;
   },
 
   create: async (userData) => {
     // Reuses /auth/register — only admin can call this
-    const res = await API.post('/auth/register', userData);
+    const res = await API.post("/auth/register", userData);
     return res.data;
   },
 
