@@ -18,7 +18,7 @@ export default function Inventory() {
   const fetchProducts = async () => {
     try {
       const res = await inventoryService.getAll();
-      setProducts(res.data || []);
+      setProducts(res || []);
     } catch (err) {
       console.error(err);
     } finally {

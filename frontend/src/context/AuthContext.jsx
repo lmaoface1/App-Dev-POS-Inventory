@@ -16,13 +16,13 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const res = await authService.login(email, password);
-      const { token, user: userData } = res.data;
+      const { token, user: userData } = res;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       return { success: true, role: userData.role };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'Login failed' };
+      return { success: false, message: err.response?.data?.error || 'Login failed' };
     } finally {
       setLoading(false);
     }
