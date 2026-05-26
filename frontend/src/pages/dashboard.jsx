@@ -54,7 +54,7 @@ export default function Dashboard() {
         datasets: [{
           label: 'Sales (₱)',
           data: salesByDay.map((d) => d.total),
-          borderColor: '#3b82f6',
+          borderColor: '#4780db',
           backgroundColor: 'rgba(59,130,246,0.06)',
           borderWidth: 2,
           pointRadius: 0,
