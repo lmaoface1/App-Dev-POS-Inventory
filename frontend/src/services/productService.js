@@ -1,8 +1,8 @@
-import API from './api';
+import API from "./api";
 
 export const productService = {
   getAll: async () => {
-    const res = await API.get('/products');
+    const res = await API.get("/products");
     return res.data;
   },
 
@@ -12,7 +12,7 @@ export const productService = {
   },
 
   create: async (productData) => {
-    const res = await API.post('/products', productData);
+    const res = await API.post("/products", productData);
     return res.data;
   },
 
@@ -29,17 +29,17 @@ export const productService = {
 
 export const inventoryService = {
   getAll: async () => {
-    const res = await API.get('/inventory');
+    const res = await API.get("/products");
     return res.data;
   },
 
   getLowStock: async () => {
-    const res = await API.get('/inventory/low-stock');
+    const res = await API.get("/products/low-stock");
     return res.data;
   },
 
   adjustStock: async (id, quantity) => {
-    const res = await API.put(`/inventory/${id}`, { quantity });
+    const res = await API.put(`/products/${id}`, { stock: quantity });
     return res.data;
   },
 };

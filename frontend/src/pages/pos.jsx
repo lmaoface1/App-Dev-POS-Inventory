@@ -1,27 +1,35 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Printer } from 'lucide-react';
-import { productService } from '../services/productService';
-import { salesService } from '../services/salesService';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Plus,
+  Minus,
+  Trash2,
+  ShoppingCart,
+  Printer,
+} from "lucide-react";
+import { productService } from "../services/productService";
+import { salesService } from "../services/salesService";
+import { useAuth } from "../context/AuthContext";
 
 export default function POS() {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [receipt, setReceipt] = useState(null);
 
   useEffect(() => {
-    productService.getAll()
-      .then((res) => setProducts(res.data || []))
+    productService
+      .getAll()
+      .then((data) => setProducts(data || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = products.filter(
-    (p) => p.stock > 0 && p.name.toLowerCase().includes(search.toLowerCase())
+    (p) => p.stock > 0 && p.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const addToCart = (product) => {
@@ -30,22 +38,36 @@ export default function POS() {
       if (existing) {
         if (existing.quantity >= product.stock) return prev;
         return prev.map((i) =>
-          i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i,
         );
       }
-      return [...prev, { product_id: product.id, name: product.name, unit_price: product.price, quantity: 1, maxStock: product.stock }];
+      return [
+        ...prev,
+        {
+          product_id: product.id,
+          name: product.name,
+          unit_price: product.price,
+          quantity: 1,
+          maxStock: product.stock,
+        },
+      ];
     });
   };
 
   const updateQty = (product_id, delta) => {
     setCart((prev) =>
       prev
-        .map((i) => i.product_id === product_id ? { ...i, quantity: Math.min(i.quantity + delta, i.maxStock) } : i)
-        .filter((i) => i.quantity > 0)
+        .map((i) =>
+          i.product_id === product_id
+            ? { ...i, quantity: Math.min(i.quantity + delta, i.maxStock) }
+            : i,
+        )
+        .filter((i) => i.quantity > 0),
     );
   };
 
-  const removeItem = (product_id) => setCart((prev) => prev.filter((i) => i.product_id !== product_id));
+  const removeItem = (product_id) =>
+    setCart((prev) => prev.filter((i) => i.product_id !== product_id));
 
   const total = cart.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
 
@@ -54,15 +76,27 @@ export default function POS() {
     setProcessing(true);
     try {
       const res = await salesService.processSale({
-        items: cart.map(({ product_id, quantity, unit_price }) => ({ product_id, quantity, unit_price })),
+        items: cart.map(({ product_id, quantity, unit_price }) => ({
+          product_id,
+          quantity,
+          unit_price,
+        })),
       });
-      setReceipt({ ...res.data, items: cart, total, cashier: user?.name, date: new Date() });
+      setReceipt({
+        ...res.data,
+        items: cart,
+        total,
+        cashier: user?.name,
+        date: new Date(),
+      });
       setCart([]);
       // Refresh products so stock counts update
       const updated = await productService.getAll();
-      setProducts(updated.data || []);
+      setProducts(updated || []);
     } catch (err) {
-      alert(err.response?.data?.message || 'Checkout failed. Please try again.');
+      alert(
+        err.response?.data?.message || "Checkout failed. Please try again.",
+      );
     } finally {
       setProcessing(false);
     }
@@ -77,20 +111,28 @@ export default function POS() {
             <h2 className="font-bold text-lg text-gray-900">SmartSale</h2>
             <p className="text-xs text-gray-400">Official Receipt</p>
             <p className="text-xs text-gray-400 mt-1">
-              {receipt.date.toLocaleDateString()} {receipt.date.toLocaleTimeString()}
+              {receipt.date.toLocaleDateString()}{" "}
+              {receipt.date.toLocaleTimeString()}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Cashier: {receipt.cashier}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Cashier: {receipt.cashier}
+            </p>
           </div>
 
           {/* Items */}
           <div className="space-y-2 mb-4">
             {receipt.items.map((item) => (
-              <div key={item.product_id} className="flex justify-between text-sm">
+              <div
+                key={item.product_id}
+                className="flex justify-between text-sm"
+              >
                 <div>
                   <span className="text-gray-800">{item.name}</span>
                   <span className="text-gray-400 ml-2">×{item.quantity}</span>
                 </div>
-                <span className="text-gray-800">₱{(item.unit_price * item.quantity).toFixed(2)}</span>
+                <span className="text-gray-800">
+                  ₱{(item.unit_price * item.quantity).toFixed(2)}
+                </span>
               </div>
             ))}
           </div>
@@ -101,7 +143,9 @@ export default function POS() {
             <span>₱{receipt.total.toFixed(2)}</span>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-4">Thank you for your purchase!</p>
+          <p className="text-center text-xs text-gray-400 mt-4">
+            Thank you for your purchase!
+          </p>
 
           {/* Actions */}
           <div className="flex gap-3 mt-5">
@@ -129,11 +173,16 @@ export default function POS() {
       <div className="flex-1 overflow-auto p-6 space-y-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Point of Sale</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Select products to add to cart</p>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Select products to add to cart
+          </p>
         </div>
 
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -145,7 +194,10 @@ export default function POS() {
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[...Array(9)].map((_, i) => (
-              <div key={i} className="h-28 bg-gray-200 rounded-xl animate-pulse" />
+              <div
+                key={i}
+                className="h-28 bg-gray-200 rounded-xl animate-pulse"
+              />
             ))}
           </div>
         ) : (
@@ -157,26 +209,38 @@ export default function POS() {
                   key={p.id}
                   onClick={() => addToCart(p)}
                   className={`bg-white rounded-xl border text-left p-4 transition hover:border-orange-300 hover:shadow-sm ${
-                    inCart ? 'border-orange-300 bg-orange-50' : 'border-gray-100'
+                    inCart
+                      ? "border-orange-300 bg-orange-50"
+                      : "border-gray-100"
                   }`}
                 >
                   <div className="w-8 h-8 bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
                     <ShoppingCart size={14} className="text-gray-400" />
                   </div>
-                  <p className="font-medium text-sm text-gray-800 truncate">{p.name}</p>
+                  <p className="font-medium text-sm text-gray-800 truncate">
+                    {p.name}
+                  </p>
                   <p className="text-xs text-gray-400 mt-0.5">{p.category}</p>
                   <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-bold text-orange-500">₱{Number(p.price).toFixed(2)}</span>
-                    <span className="text-xs text-gray-400">{p.stock} left</span>
+                    <span className="text-sm font-bold text-orange-500">
+                      ₱{Number(p.price).toFixed(2)}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {p.stock} left
+                    </span>
                   </div>
                   {inCart && (
-                    <span className="mt-1.5 inline-block text-xs text-orange-600 font-medium">In cart: {inCart.quantity}</span>
+                    <span className="mt-1.5 inline-block text-xs text-orange-600 font-medium">
+                      In cart: {inCart.quantity}
+                    </span>
                   )}
                 </button>
               );
             })}
             {filtered.length === 0 && (
-              <div className="col-span-3 text-center py-12 text-gray-400">No products available</div>
+              <div className="col-span-3 text-center py-12 text-gray-400">
+                No products available
+              </div>
             )}
           </div>
         )}
@@ -189,7 +253,9 @@ export default function POS() {
             <ShoppingCart size={18} className="text-orange-500" />
             <h2 className="font-semibold text-gray-800">Cart</h2>
             {cart.length > 0 && (
-              <span className="ml-auto text-xs bg-orange-500 text-white rounded-full px-2 py-0.5">{cart.length}</span>
+              <span className="ml-auto text-xs bg-orange-500 text-white rounded-full px-2 py-0.5">
+                {cart.length}
+              </span>
             )}
           </div>
         </div>
@@ -204,8 +270,13 @@ export default function POS() {
             cart.map((item) => (
               <div key={item.product_id} className="bg-gray-50 rounded-xl p-3">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-medium text-gray-800 flex-1 pr-2">{item.name}</p>
-                  <button onClick={() => removeItem(item.product_id)} className="text-gray-300 hover:text-red-500 transition">
+                  <p className="text-sm font-medium text-gray-800 flex-1 pr-2">
+                    {item.name}
+                  </p>
+                  <button
+                    onClick={() => removeItem(item.product_id)}
+                    className="text-gray-300 hover:text-red-500 transition"
+                  >
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -217,7 +288,9 @@ export default function POS() {
                     >
                       <Minus size={11} />
                     </button>
-                    <span className="text-sm font-semibold w-5 text-center">{item.quantity}</span>
+                    <span className="text-sm font-semibold w-5 text-center">
+                      {item.quantity}
+                    </span>
                     <button
                       onClick={() => updateQty(item.product_id, 1)}
                       className="w-6 h-6 bg-white rounded-md border border-gray-200 flex items-center justify-center hover:border-orange-300 transition"
@@ -245,7 +318,7 @@ export default function POS() {
             disabled={cart.length === 0 || processing}
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition"
           >
-            {processing ? 'Processing...' : `Checkout — ₱${total.toFixed(2)}`}
+            {processing ? "Processing..." : `Checkout — ₱${total.toFixed(2)}`}
           </button>
         </div>
       </div>
