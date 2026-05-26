@@ -5,7 +5,8 @@ const router = express.Router();
 
 // POST /api/sales — process checkout
 router.post("/", async (req, res) => {
-  const { cashier_id, items } = req.body;
+  const cashier_id = req.user.id;
+  const { items } = req.body;
   // items = [{ product_id, quantity, unit_price }, ...]
 
   const total_amount = items.reduce(
