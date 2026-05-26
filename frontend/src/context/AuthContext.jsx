@@ -1,14 +1,12 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/authService';
+import { createContext, useContext, useState, useEffect } from "react";
+import { authService } from "../services/authService";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState({
-    id: 1,
-    name: 'Admin',
-    email: 'admin@smartsale.com',
-    role: 'admin',
+  const [user, setUser] = useState(() => {
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(false);
 
@@ -17,20 +15,23 @@ export function AuthProvider({ children }) {
     try {
       const res = await authService.login(email, password);
       const { token, user: userData } = res;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
       return { success: true, role: userData.role };
     } catch (err) {
-      return { success: false, message: err.response?.data?.error || 'Login failed' };
+      return {
+        success: false,
+        message: err.response?.data?.error || "Login failed",
+      };
     } finally {
       setLoading(false);
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
