@@ -36,7 +36,7 @@ export default function Dashboard() {
         setSummary(sumRes.data);
         setSalesByDay(salesRes.data || []);
         setTopProducts(topRes.data || []);
-        setLowStock(lowRes.data || []);
+        setLowStock(Array.isArray(lowRes) ? lowRes : (lowRes.data || []));
       } catch (err) {
         console.error('Dashboard fetch error:', err);
         setError('Failed to load dashboard data. Make sure the backend is running.');

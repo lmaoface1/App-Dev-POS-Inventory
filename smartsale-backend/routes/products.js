@@ -10,15 +10,16 @@ router.get('/', async (req, res) => {
   res.json(data)
 })
 
-// GET /api/products/low-stock
+// GET /api/products/low-stock — uses each product's own low_stock_threshold
 router.get('/low-stock', async (req, res) => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .filter('stock', 'lte', 5)
 
   if (error) return res.status(400).json({ error: error.message })
-  res.json(data)
+
+  const lowStock = (data || []).filter(p => p.stock <= (p.low_stock_threshold ?? 5))
+  res.json(lowStock)
 })
 
 // POST /api/products

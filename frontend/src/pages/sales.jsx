@@ -29,14 +29,15 @@ export default function SalesAnalytics() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Line chart
+  // Line chart — Daily Sales
   useEffect(() => {
     if (!lineRef.current || salesByDay.length === 0) return;
     if (lineChart.current) lineChart.current.destroy();
     lineChart.current = new Chart(lineRef.current, {
       type: 'line',
       data: {
-        labels: salesByDay.map((d) => `Day ${d.day}`),
+        // d.day is already "May 26" — no prefix needed
+        labels: salesByDay.map((d) => d.day),
         datasets: [{
           label: 'Sales (₱)',
           data: salesByDay.map((d) => d.total),
@@ -50,7 +51,8 @@ export default function SalesAnalytics() {
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
@@ -61,7 +63,7 @@ export default function SalesAnalytics() {
     return () => lineChart.current?.destroy();
   }, [salesByDay]);
 
-  // Bar chart — top products
+  // Bar chart — Top products by revenue
   useEffect(() => {
     if (!barRef.current || topProducts.length === 0) return;
     if (barChart.current) barChart.current.destroy();
@@ -77,7 +79,8 @@ export default function SalesAnalytics() {
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
@@ -88,13 +91,21 @@ export default function SalesAnalytics() {
     return () => barChart.current?.destroy();
   }, [topProducts]);
 
-  const formatPeso = (n) => `₱${Number(n || 0).toLocaleString()}`;
+  const formatPeso = (n) =>
+    `₱${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
+  const totalRev = summary?.total_revenue ?? 0;
+  const avgSale =
+    summary && summary.total_transactions > 0
+      ? totalRev / summary.total_transactions
+      : 0;
+
+  // Use snake_case keys that match the backend response
   const stats = [
-    { label: 'Total Revenue', value: formatPeso(summary?.totalRevenue), color: 'text-green-600', bg: 'bg-green-50' },
-    { label: "Today's Sales", value: formatPeso(summary?.todaySales), color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Total Transactions', value: summary?.totalTransactions ?? '—', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Avg. Sale Value', value: formatPeso(summary?.avgSale), color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Total Revenue',      value: formatPeso(summary?.total_revenue),     color: 'text-green-600',  bg: 'bg-green-50' },
+    { label: "Today's Sales",      value: formatPeso(summary?.today_sales),        color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Total Transactions', value: summary?.total_transactions ?? '—',      color: 'text-blue-600',   bg: 'bg-blue-50' },
+    { label: 'Avg. Sale Value',    value: formatPeso(avgSale),                     color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
   return (
@@ -107,9 +118,11 @@ export default function SalesAnalytics() {
       {/* Stats row */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-5">
-            <p className="text-sm text-gray-400">{s.label}</p>
-            <p className={`text-2xl font-bold mt-1 ${s.color}`}>{loading ? '—' : s.value}</p>
+          <div key={s.label} className={`rounded-xl border border-gray-100 p-5 ${s.bg}`}>
+            <p className="text-sm text-gray-500">{s.label}</p>
+            <p className={`text-2xl font-bold mt-1 ${s.color}`}>
+              {loading ? '—' : s.value}
+            </p>
           </div>
         ))}
       </div>
@@ -118,10 +131,15 @@ export default function SalesAnalytics() {
       <div className="bg-white rounded-xl border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4">Daily Sales — Last 30 Days</h2>
         <div className="h-64">
-          {loading
-            ? <div className="h-full bg-gray-100 rounded-lg animate-pulse" />
-            : <canvas ref={lineRef} />
-          }
+          {loading ? (
+            <div className="h-full bg-gray-100 rounded-lg animate-pulse" />
+          ) : salesByDay.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+              No sales data yet
+            </div>
+          ) : (
+            <canvas ref={lineRef} />
+          )}
         </div>
       </div>
 
@@ -129,14 +147,19 @@ export default function SalesAnalytics() {
       <div className="bg-white rounded-xl border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4">Top Products by Revenue</h2>
         <div className="h-64">
-          {loading
-            ? <div className="h-full bg-gray-100 rounded-lg animate-pulse" />
-            : <canvas ref={barRef} />
-          }
+          {loading ? (
+            <div className="h-full bg-gray-100 rounded-lg animate-pulse" />
+          ) : topProducts.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+              No product sales yet
+            </div>
+          ) : (
+            <canvas ref={barRef} />
+          )}
         </div>
       </div>
 
-      {/* Table */}
+      {/* Breakdown table */}
       <div className="bg-white rounded-xl border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4">Product Sales Breakdown</h2>
         <table className="w-full text-sm">
@@ -149,25 +172,40 @@ export default function SalesAnalytics() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {topProducts.map((p, i) => {
-              const totalRev = topProducts.reduce((s, x) => s + Number(x.total_revenue), 0);
-              const share = totalRev > 0 ? ((Number(p.total_revenue) / totalRev) * 100).toFixed(1) : '0';
-              return (
-                <tr key={i}>
-                  <td className="py-3.5 text-gray-800 font-medium">{p.name}</td>
-                  <td className="py-3.5 text-right text-gray-600">{p.total_quantity}</td>
-                  <td className="py-3.5 text-right font-semibold text-gray-900">{formatPeso(p.total_revenue)}</td>
-                  <td className="py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="w-20 bg-gray-100 rounded-full h-1.5">
-                        <div className="bg-orange-400 h-1.5 rounded-full" style={{ width: `${share}%` }} />
+            {topProducts.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-gray-400">
+                  No sales data yet
+                </td>
+              </tr>
+            ) : (
+              topProducts.map((p, i) => {
+                const allRev = topProducts.reduce((s, x) => s + Number(x.total_revenue), 0);
+                const share = allRev > 0
+                  ? ((Number(p.total_revenue) / allRev) * 100).toFixed(1)
+                  : '0.0';
+                return (
+                  <tr key={i}>
+                    <td className="py-3.5 text-gray-800 font-medium">{p.name}</td>
+                    <td className="py-3.5 text-right text-gray-600">{p.total_quantity}</td>
+                    <td className="py-3.5 text-right font-semibold text-gray-900">
+                      {formatPeso(p.total_revenue)}
+                    </td>
+                    <td className="py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="w-20 bg-gray-100 rounded-full h-1.5">
+                          <div
+                            className="bg-orange-400 h-1.5 rounded-full"
+                            style={{ width: `${share}%` }}
+                          />
+                        </div>
+                        <span className="text-gray-500 text-xs w-10 text-right">{share}%</span>
                       </div>
-                      <span className="text-gray-500 text-xs w-10 text-right">{share}%</span>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
