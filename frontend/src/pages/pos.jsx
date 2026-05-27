@@ -83,7 +83,7 @@ export default function POS() {
         })),
       });
       setReceipt({
-        ...res.data,
+        ...res,
         items: cart,
         total,
         cashier: user?.name,

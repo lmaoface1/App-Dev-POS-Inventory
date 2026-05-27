@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Settings, Package, DollarSign, ShoppingCart, AlertTriangle } from 'lucide-react';
+import { Package, DollarSign, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { Chart, registerables } from 'chart.js';
 import { dashboardService } from '../services/dashboardService';
 import { inventoryService } from '../services/productService';
@@ -15,26 +15,31 @@ export default function Dashboard() {
   const [topProducts, setTopProducts] = useState([]);
   const [lowStock, setLowStock] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
+        // Each service method returns the axios response directly;
+        // actual payload is in .data
         const [sumRes, salesRes, topRes, lowRes] = await Promise.all([
           dashboardService.getSummary(),
           dashboardService.getSalesByDay(),
           dashboardService.getTopProducts(),
           inventoryService.getLowStock(),
         ]);
+
         setSummary(sumRes.data);
-        setSalesByDay(salesRes.data);
-        setTopProducts(topRes.data);
-        setLowStock(lowRes.data);
+        setSalesByDay(salesRes.data || []);
+        setTopProducts(topRes.data || []);
+        setLowStock(lowRes.data || []);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
+        setError('Failed to load dashboard data. Make sure the backend is running.');
       } finally {
         setLoading(false);
       }
@@ -42,7 +47,7 @@ export default function Dashboard() {
     fetchAll();
   }, []);
 
-  // Build Chart.js line chart
+  // Build Chart.js line chart whenever salesByDay updates
   useEffect(() => {
     if (!chartRef.current || salesByDay.length === 0) return;
     if (chartInstance.current) chartInstance.current.destroy();
@@ -50,14 +55,14 @@ export default function Dashboard() {
     chartInstance.current = new Chart(chartRef.current, {
       type: 'line',
       data: {
-        labels: salesByDay.map((d) => `Day ${d.day}`),
+        labels: salesByDay.map((d) => d.day),
         datasets: [{
           label: 'Sales (₱)',
           data: salesByDay.map((d) => d.total),
           borderColor: '#4780db',
-          backgroundColor: 'rgba(59,130,246,0.06)',
+          backgroundColor: 'rgba(71,128,219,0.06)',
           borderWidth: 2,
-          pointRadius: 0,
+          pointRadius: 3,
           tension: 0.4,
           fill: true,
         }],
@@ -68,36 +73,42 @@ export default function Dashboard() {
         plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
-          y: {
-            grid: { color: '#f3f4f6' },
-            ticks: { font: { size: 11 }, color: '#9ca3af' },
-          },
+          y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
         },
       },
     });
+
     return () => chartInstance.current?.destroy();
   }, [salesByDay]);
 
-  const formatPeso = (n) => `₱${Number(n || 0).toLocaleString()}`;
+  const formatPeso = (n) => `₱${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-  // Skeleton while loading
   if (loading) {
     return (
       <div className="p-8 animate-pulse space-y-6">
         <div className="h-8 bg-gray-200 rounded w-48" />
         <div className="grid grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 bg-gray-200 rounded-xl" />
-          ))}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gray-200 rounded-xl" />)}
         </div>
         <div className="h-64 bg-gray-200 rounded-xl" />
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md text-center">
+          <AlertTriangle size={32} className="text-red-400 mx-auto mb-3" />
+          <p className="text-red-700 font-medium">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
+      {/* Header — Bell and Settings buttons removed */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -105,58 +116,53 @@ export default function Dashboard() {
             Welcome back! Here's your business overview for {today}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="relative p-2 text-gray-400 hover:text-gray-600">
-            <Bell size={20} />
-            {lowStock.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            )}
-          </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600">
-            <Settings size={20} />
-          </button>
-        </div>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard
           title="Total Inventory Value"
-          value={formatPeso(summary?.inventoryValue)}
-          subtitle="+5.2%"
+          value={formatPeso(summary?.inventory_value)}
+          subtitle="Current stock value"
           icon={Package}
           iconColor="text-blue-400"
         />
         <MetricCard
           title="Today's Sales"
-          value={formatPeso(summary?.todaySales)}
-          subtitle="+12% vs avg"
+          value={formatPeso(summary?.today_sales)}
+          subtitle={`${summary?.total_transactions ?? 0} total transactions`}
           icon={DollarSign}
           iconColor="text-green-400"
         />
         <MetricCard
-          title="Pending Orders"
-          value={summary?.pendingOrders ?? 0}
-          subtitle={`${summary?.pendingOrders ?? 0} pending transactions`}
+          title="Total Revenue"
+          value={formatPeso(summary?.total_revenue)}
+          subtitle="All-time revenue"
           icon={ShoppingCart}
           iconColor="text-orange-400"
         />
         <MetricCard
           title="Low Stock Items"
-          value={summary?.lowStockCount ?? lowStock.length}
-          subtitle={`${summary?.lowStockCount ?? lowStock.length} items below threshold`}
+          value={summary?.low_stock_count ?? lowStock.length}
+          subtitle={`${summary?.low_stock_count ?? lowStock.length} items below threshold`}
           icon={AlertTriangle}
           iconColor="text-red-400"
         />
       </div>
 
-      {/* Chart + Low Stock side by side */}
+      {/* Chart + Low Stock */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Sales Chart */}
         <div className="xl:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
           <h2 className="font-semibold text-gray-800 mb-4">Sales Over Time</h2>
           <div className="h-56">
-            <canvas ref={chartRef} />
+            {salesByDay.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                No sales data yet — complete a transaction from the POS to see data here.
+              </div>
+            ) : (
+              <canvas ref={chartRef} />
+            )}
           </div>
         </div>
 
@@ -168,7 +174,8 @@ export default function Dashboard() {
           </div>
           <div className="space-y-4">
             {lowStock.slice(0, 5).map((item) => {
-              const pct = Math.min((item.stock / item.low_stock_threshold) * 100, 100);
+              const threshold = item.low_stock_threshold || 5;
+              const pct = Math.min((item.stock / threshold) * 100, 100);
               return (
                 <div key={item.id} className="bg-orange-50 rounded-lg p-3">
                   <div className="flex justify-between mb-1.5">
@@ -181,7 +188,7 @@ export default function Dashboard() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Threshold: {item.low_stock_threshold} units</p>
+                  <p className="text-xs text-gray-400 mt-1">Threshold: {threshold} units</p>
                 </div>
               );
             })}
@@ -217,7 +224,9 @@ export default function Dashboard() {
               ))}
               {topProducts.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-6 text-center text-gray-400">No sales data yet</td>
+                  <td colSpan={3} className="py-6 text-center text-gray-400">
+                    No sales yet — transactions from the POS will appear here.
+                  </td>
                 </tr>
               )}
             </tbody>

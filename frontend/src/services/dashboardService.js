@@ -1,18 +1,12 @@
 import API from './api';
 
 export const dashboardService = {
-  getSummary: async () => {
-    const res = await API.get('/dashboard/summary');
-    return res.data;
-  },
+  // Returns the summary object directly (not wrapped in .data again)
+  getSummary: () => API.get('/dashboard/summary'),
 
-  getSalesByDay: async () => {
-    const res = await API.get('/dashboard/sales-by-day');
-    return res.data;
-  },
+  // Returns array of { day, total }
+  getSalesByDay: () => API.get('/dashboard/sales-by-day'),
 
-  getTopProducts: async () => {
-    const res = await API.get('/dashboard/top-products');
-    return res.data;
-  },
+  // Returns array of { product_id, name, total_quantity, total_revenue }
+  getTopProducts: () => API.get('/dashboard/top-products'),
 };
